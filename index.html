@@ -21,6 +21,33 @@
             text-align: center;
             width: 90%;
         }
+        .time-modes {
+            margin-bottom: 20px;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #646669;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            padding: 5px 10px;
+            transition: color 0.2s;
+        }
+        .mode-btn:hover {
+            color: #d1d0c5;
+        }
+        .mode-btn.active {
+            color: #e2b714;
+            font-weight: bold;
+        }
+        #timer-display {
+            font-size: 32px;
+            color: #e2b714;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
         #words-display {
             font-size: 24px;
             color: #646669;
@@ -89,6 +116,13 @@
 <body>
 
 <div class="container">
+    <div class="time-modes">
+        <button class="mode-btn active" onclick="changeDuration(30, this)">30s</button>
+        <button class="mode-btn" onclick="changeDuration(60, this)">60s</button>
+        <button class="mode-btn" onclick="changeDuration(90, this)">90s</button>
+    </div>
+
+    <div id="timer-display">30</div>
     <div id="words-display"></div>
     <input type="text" id="input-box" placeholder="Type the words here..." autofocus autocomplete="off">
     <div id="stats">WPM: 0 | Accuracy: 100%</div>
@@ -106,10 +140,16 @@
     let activeWordList = [...defaultWordList];
     let testWords = [];
     let currentWordIndex = 0;
-    let startTime = null;
+    
+    let timerDuration = 30;
+    let timeLeft = timerDuration;
+    let countdownInterval = null;
+    let isTestRunning = false;
+    
     let totalTypedCharacters = 0;
     let correctCharacters = 0;
 
+    const timerDisplay = document.getElementById('timer-display');
     const wordsDisplay = document.getElementById('words-display');
     const inputBox = document.getElementById('input-box');
     const statsDisplay = document.getElementById('stats');
@@ -117,10 +157,7 @@
 
     function generateWords() {
         testWords = [];
-        // If the user loaded fewer than 15 custom words, just use all of them
-        const count = activeWordList.length < 15 ? activeWordList.length : 15;
-        
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < 150; i++) {
             const randomWord = activeWordList[Math.floor(Math.random() * activeWordList.length)];
             testWords.push(randomWord);
         }
@@ -136,22 +173,46 @@
         }).join(' ');
     }
 
+    function changeDuration(seconds, buttonElement) {
+        if (isTestRunning) return; // Prevent changing time mid-test
+        
+        timerDuration = seconds;
+        
+        // Update active class on buttons
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        buttonElement.classList.add('active');
+        
+        resetTest();
+    }
+
     function setCustomWords() {
         const text = customTextInput.value.trim();
         if (text.length > 0) {
-            // Split text by spaces to create a custom word array
             activeWordList = text.split(/\s+/);
-            resetTest();
         } else {
-            // If empty, revert back to default words
             activeWordList = [...defaultWordList];
-            resetTest();
         }
+        resetTest();
+    }
+
+    function startTimer() {
+        isTestRunning = true;
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+
+            calculateLiveStats();
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                endTest();
+            }
+        }, 1000);
     }
 
     inputBox.addEventListener('input', (e) => {
-        if (!startTime) {
-            startTime = new Date();
+        if (!isTestRunning && inputBox.value.length > 0) {
+            startTimer();
         }
 
         const currentWord = testWords[currentWordIndex];
@@ -167,37 +228,41 @@
 
             currentWordIndex++;
             inputBox.value = '';
-
-            if (currentWordIndex >= testWords.length) {
-                calculateFinalStats();
-                resetTest();
-            } else {
-                renderWords();
-                calculateLiveStats();
-            }
+            renderWords();
+            calculateLiveStats();
         }
     });
 
     function calculateLiveStats() {
-        if (!startTime) return;
-        const timeElapsed = (new Date() - startTime) / 1000 / 60;
+        const timeElapsed = (timerDuration - timeLeft) / 60;
+        if (timeElapsed <= 0) return;
+
         const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
         const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
         statsDisplay.innerText = `WPM: ${wpm} | Accuracy: ${accuracy}%`;
     }
 
-    function calculateFinalStats() {
-        const timeElapsed = (new Date() - startTime) / 1000 / 60;
+    function endTest() {
+        inputBox.disabled = true;
+        const timeElapsed = timerDuration / 60;
         const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
-        alert(`Test complete! Final Speed: ${wpm} WPM`);
+        const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
+        
+        alert(`Time's up!\nSpeed: ${wpm} WPM\nAccuracy: ${accuracy}%`);
+        resetTest();
     }
 
     function resetTest() {
+        clearInterval(countdownInterval);
+        isTestRunning = false;
+        timeLeft = timerDuration;
         currentWordIndex = 0;
-        startTime = null;
         totalTypedCharacters = 0;
         correctCharacters = 0;
+        
+        timerDisplay.innerText = timeLeft;
         inputBox.value = '';
+        inputBox.disabled = false;
         generateWords();
         statsDisplay.innerText = `WPM: 0 | Accuracy: 100%`;
         inputBox.focus();
