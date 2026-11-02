@@ -136,7 +136,7 @@
 </div>
 
 <script>
-    let defaultWordList = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "javascript", "code", "github", "game", "typing", "speed", "test", "minimal", "monkey", "style", "lines"];
+    let defaultWordList = ["the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "javascript", "code", "github", "game", "typing", "speed", "test", "minimal", "monkey", "style", "lines", "keyboard", "practice", "chromebook", "developer", "screen", "timer", "clock", "button", "custom", "words", "challenge"];
     let activeWordList = [...defaultWordList];
     let testWords = [];
     let currentWordIndex = 0;
@@ -155,12 +155,25 @@
     const statsDisplay = document.getElementById('stats');
     const customTextInput = document.getElementById('custom-text-input');
 
-    function generateWords() {
-        testWords = [];
-        for (let i = 0; i < 150; i++) {
-            const randomWord = activeWordList[Math.floor(Math.random() * activeWordList.length)];
-            testWords.push(randomWord);
+    // Shuffle function to mix the words up without duplication
+    function shuffleArray(array) {
+        let shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[shuffled[i]]];
         }
+        return shuffled;
+    }
+
+    function generateWords() {
+        // Shuffle the active list so it's completely random every game
+        testWords = shuffleArray(activeWordList);
+        
+        // If the shuffled list is tiny, safely expand it so the runner doesn't run out of text
+        while (testWords.length < 100) {
+            testWords = testWords.concat(shuffleArray(activeWordList));
+        }
+        
         renderWords();
     }
 
@@ -174,11 +187,10 @@
     }
 
     function changeDuration(seconds, buttonElement) {
-        if (isTestRunning) return; // Prevent changing time mid-test
+        if (isTestRunning) return; 
         
         timerDuration = seconds;
         
-        // Update active class on buttons
         document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
         buttonElement.classList.add('active');
         
