@@ -155,23 +155,13 @@
     const statsDisplay = document.getElementById('stats');
     const customTextInput = document.getElementById('custom-text-input');
 
-    // Shuffle function to mix the words up without duplication
-    function shuffleArray(array) {
-        let shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[shuffled[i]]];
-        }
-        return shuffled;
-    }
-
     function generateWords() {
-        // Shuffle the active list so it's completely random every game
-        testWords = shuffleArray(activeWordList);
+        // Use the exact word list in order with no random choices
+        testWords = [...activeWordList];
         
-        // If the shuffled list is tiny, safely expand it so the runner doesn't run out of text
-        while (testWords.length < 100) {
-            testWords = testWords.concat(shuffleArray(activeWordList));
+        // If the list is short, repeat the list in exact sequential order to fill the test space
+        while (testWords.length < 150) {
+            testWords = testWords.concat(activeWordList);
         }
         
         renderWords();
