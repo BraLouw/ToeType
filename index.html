@@ -1,306 +1,625 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Typing Test</title>
-    <style>
-        body {
-            background-color: #323437;
-            color: #d1d0c5;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            max-width: 800px;
-            text-align: center;
-            width: 90%;
-        }
-        .menu-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-        .time-modes {
-            display: flex;
-        }
-        .mode-btn, .toggle-btn {
-            background: transparent;
-            border: none;
-            color: #646669;
-            font-family: inherit;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 5px 10px;
-            transition: color 0.2s, background-color 0.2s;
-            border-radius: 5px;
-        }
-        .mode-btn:hover, .toggle-btn:hover {
-            color: #d1d0c5;
-        }
-        .mode-btn.active {
-            color: #e2b714;
-            font-weight: bold;
-        }
-        .toggle-btn {
-            border: 1px solid #646669;
-            color: #d1d0c5;
-        }
-        .toggle-btn.active {
-            background-color: #ca4754;
-            color: #ffffff;
-            border-color: #ca4754;
-            font-weight: bold;
-        }
-        #timer-display {
-            font-size: 32px;
-            color: #e2b714;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        #words-display {
-            font-size: 24px;
-            color: #646669;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            letter-spacing: 1px;
-            text-align: left;
-            min-height: 80px;
-        }
-        .current-word {
-            color: #d1d0c5;
-            border-bottom: 2px solid #e2b714;
-        }
-        #input-box {
-            background: transparent;
-            border: 2px solid #646669;
-            color: #d1d0c5;
-            font-size: 18px;
-            padding: 10px;
-            border-radius: 5px;
-            outline: none;
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 20px;
-        }
-        #input-box:focus {
-            border-color: #e2b714;
-        }
-        #stats {
-            margin-top: 10px;
-            font-size: 18px;
-            color: #e2b714;
-        }
-        .custom-section {
-            margin-top: 40px;
-            border-top: 1px solid #2c2e31;
-            padding-top: 20px;
-        }
-        #custom-text-input {
-            background: #2c2e31;
-            border: 1px solid #646669;
-            color: #d1d0c5;
-            padding: 10px;
-            width: 100%;
-            max-width: 500px;
-            border-radius: 5px;
-            outline: none;
-            font-family: inherit;
-        }
-        #apply-btn {
-            background: #e2b714;
-            color: #323437;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        #apply-btn:hover {
-            background: #ffd014;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeRush</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101116;color:#eee;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px}
+h1{color:#e9b949;font-size:40px;margin:0}
+header p,.muted{color:#999}
+main{max-width:1000px;margin:auto;padding:15px}
+.panel{background:#191b24;border:1px solid #30323e;border-radius:14px;padding:20px;margin-bottom:18px}
+h2{color:#e9b949;margin-top:0}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+button,select,textarea{background:#252834;color:#eee;border:1px solid #454958;border-radius:8px;padding:11px;font-size:15px}
+button{cursor:pointer}
+button:hover{border-color:#e9b949;color:#e9b949}
+button:disabled,select:disabled{opacity:.4;cursor:not-allowed}
+textarea{width:100%;min-height:90px;resize:vertical}
+textarea:focus,select:focus{outline:2px solid #e9b949}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center}
+.stat{background:#252834;border-radius:10px;padding:15px}
+.stat strong{display:block;font-size:27px;color:#e9b949}
+.stat span{font-size:12px;color:#aaa}
+#prompt{font-size:21px;line-height:1.9;letter-spacing:1px;min-height:130px;color:#777;overflow-wrap:anywhere}
+#prompt span.correct{color:#75d69c}
+#prompt span.wrong{color:#ff7777;background:#48272d}
+#prompt span.current{border-bottom:2px solid #e9b949}
+#message,#progressMessage{color:#e9b949;min-height:20px}
+.progressTrack{height:12px;background:#30323e;border-radius:10px;overflow:hidden}
+#progressBar{height:100%;width:4%;background:#e9b949;transition:width .3s}
+table{width:100%;border-collapse:collapse}
+td,th{text-align:left;padding:10px;border-bottom:1px solid #353744}
+th{color:#e9b949}
+.badge{color:#e9b949}
+@media(max-width:600px){
+ .stats{grid-template-columns:repeat(2,1fr)}
+ #prompt{font-size:18px}
+}
+</style>
 </head>
 <body>
 
-<div class="container">
-    <div class="menu-bar">
-        <div class="time-modes">
-            <button class="mode-btn active" onclick="changeDuration(30, this)">30s</button>
-            <button class="mode-btn" onclick="changeDuration(60, this)">60s</button>
-            <button class="mode-btn" onclick="changeDuration(90, this)">90s</button>
-        </div>
-        <button id="repeat-toggle" class="toggle-btn" onclick="toggleRepeat()">Repeat List: OFF</button>
-    </div>
+<header>
+<h1>⚡ TypeRush</h1>
+<p>Race your fingers. Beat your best. Become a typing legend.</p>
+</header>
 
-    <div id="timer-display">30</div>
-    <div id="words-display"></div>
-    <input type="text" id="input-box" placeholder="Type the words here..." autofocus autocomplete="off">
-    <div id="stats">WPM: 0 | Accuracy: 100%</div>
+<main>
 
-    <div class="custom-section">
-        <p style="color: #646669; font-size: 14px;">Set Custom Typing Words (separate words with spaces):</p>
-        <input type="text" id="custom-text-input" placeholder="Type your custom words here...">
-        <br>
-        <button id="apply-btn" onclick="setCustomWords()">Apply Custom Words</button>
-    </div>
+<section class="panel">
+<h2>🎮 Choose your challenge</h2>
+<div class="controls">
+<select id="gameMode">
+<option value="progression">🏆 Progression Mode</option>
+<option value="free">🎮 Free Play Mode</option>
+</select>
+<select id="difficulty">
+<option value="Baby">Baby</option>
+<option value="Easy">Easy</option>
+<option value="Medium">Medium</option>
+<option value="Hard">Hard</option>
+<option value="Expert">Expert</option>
+</select>
+<select id="level">
+<option value="1">Level 1</option>
+<option value="2">Level 2</option>
+<option value="3">Level 3</option>
+<option value="4">Level 4</option>
+<option value="5">Level 5</option>
+</select>
+<select id="duration">
+<option value="30">30 seconds</option>
+<option value="60" selected>60 seconds</option>
+<option value="90">90 seconds</option>
+</select>
 </div>
+<label><input type="checkbox" id="repeat" checked> Repeat words when finished</label>
+<p class="muted">Progression Mode unlocks levels as you play. Free Play lets you choose anything!</p>
+</section>
+
+<section class="panel">
+<h2>🌟 Your Level Journey</h2>
+<div class="stats">
+<div class="stat"><strong id="progressLevel">1/25</strong><span>LEVELS UNLOCKED</span></div>
+<div class="stat"><strong id="xp">0</strong><span>TOTAL XP</span></div>
+<div class="stat"><strong id="stars">0</strong><span>STARS EARNED</span></div>
+<div class="stat"><strong id="completedCount">0</strong><span>LEVELS COMPLETED</span></div>
+</div>
+<p id="progressMessage">Your adventure starts here!</p>
+<div class="progressTrack"><div id="progressBar"></div></div>
+</section>
+
+<section class="panel">
+<h2>⌨️ Your typing test</h2>
+<div class="stats">
+<div class="stat"><strong id="time">60</strong><span>SECONDS</span></div>
+<div class="stat"><strong id="wpm">0</strong><span>WPM</span></div>
+<div class="stat"><strong id="accuracy">100%</strong><span>ACCURACY</span></div>
+<div class="stat"><strong id="correct">0</strong><span>WORDS</span></div>
+</div>
+<p id="prompt"></p>
+<textarea id="typing" placeholder="Click here and start typing..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+<div class="controls">
+<button id="start">Start / Restart</button>
+<button id="reset">Reset</button>
+</div>
+<p id="message">Choose a level and start typing!</p>
+</section>
+
+<section class="panel">
+<h2>✏️ Custom words</h2>
+<p class="muted">Enter your own words separated by spaces, commas or new lines.</p>
+<textarea id="custom" placeholder="elephant rainbow dinosaur computer amazing"></textarea>
+<div class="controls">
+<button id="apply">Apply Custom Words</button>
+<button id="clearCustom">Clear Custom Words</button>
+</div>
+<p id="customMessage" class="muted">Your custom words will be used when applied.</p>
+</section>
+
+<section class="panel">
+<h2>🏆 Personal Best</h2>
+<div class="stats">
+<div class="stat"><strong id="bestWpm">0</strong><span>BEST WPM</span></div>
+<div class="stat"><strong id="bestAccuracy">0%</strong><span>BEST ACCURACY</span></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>🥇 Leaderboard — Top 10</h2>
+<table>
+<thead>
+<tr><th>#</th><th>WPM</th><th>Accuracy</th><th>Mode / Level</th><th>Date</th></tr>
+</thead>
+<tbody id="leaderboard"></tbody>
+</table>
+<button id="clearScores">Clear Leaderboard</button>
+<p class="muted">Your scores are saved on this device and browser.</p>
+</section>
+
+</main>
 
 <script>
-    let defaultWordList = ["the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog", "javascript", "code", "github", "game", "typing", "speed", "test", "minimal", "monkey", "style", "lines", "keyboard", "practice", "chromebook", "developer", "screen", "timer", "clock", "button", "custom", "words", "challenge"];
-    let activeWordList = [...defaultWordList];
-    let testWords = [];
-    let currentWordIndex = 0;
-    
-    let timerDuration = 30;
-    let timeLeft = timerDuration;
-    let countdownInterval = null;
-    let isTestRunning = false;
-    let shouldRepeat = false;
-    
-    let totalTypedCharacters = 0;
-    let correctCharacters = 0;
+// ========================
+// LEVEL WORDS
+// ========================
 
-    const timerDisplay = document.getElementById('timer-display');
-    const wordsDisplay = document.getElementById('words-display');
-    const inputBox = document.getElementById('input-box');
-    const statsDisplay = document.getElementById('stats');
-    const customTextInput = document.getElementById('custom-text-input');
-    const repeatToggle = document.getElementById('repeat-toggle');
+const levels = {
+Baby:[
+["cat dog sun hat cup","red blue big small fun","mum dad yes no hello"],
+["fish bird frog duck bear","one two three four five","apple ball toy milk cake"],
+["happy smile play jump run","green pink yellow orange purple","little bunny funny puppy kitten"],
+["I like my dog","The sun is hot","We can play today"],
+["The cat is sleeping","I love to play games","My puppy is very cute"]
+],
+Easy:[
+["the quick brown fox jumps over the lazy dog","I like to learn new things every day","typing is fun and practice makes perfect"],
+["a happy person can make a happy day","the little bird sings in the tree","we are going on a big adventure"],
+["reading books can take you anywhere","the stars shine brightly at night","practice a little bit every day"],
+["today is a great day to try something new","my favourite colour is bright yellow","never give up when things get tricky"],
+["the world is full of amazing places","a good friend makes life better","keep moving forward and do your best"]
+],
+Medium:[
+["curiosity makes learning an exciting adventure","creative thinking can solve difficult problems","consistency is the secret to improvement"],
+["technology changes the way people communicate","small improvements create excellent results","challenge yourself to reach another level"],
+["confidence grows through patience and practice","discovering something new feels incredible","focus carefully and trust your abilities"],
+["every challenge is an opportunity to improve","imagination can transform ordinary ideas","determination helps you achieve your goals"],
+["excellent typists combine speed with accuracy","a positive attitude makes a difference","keep practising until progress becomes natural"]
+],
+Hard:[
+["Extraordinary achievements require determination and perseverance.","Precision matters when completing complicated challenges.","Unexpected obstacles can create valuable opportunities."],
+["Sophisticated technology transforms modern communication.","Concentration improves performance under pressure.","Ambitious individuals consistently challenge themselves."],
+["Responsibility and discipline strengthen professional abilities.","Remarkable discoveries often begin with curiosity.","Accurate information supports intelligent decisions."],
+["Efficiency requires organisation, consistency, and patience.","Complex situations demand thoughtful consideration.","Creativity encourages innovative solutions to problems."],
+["Perseverance distinguishes successful people from quitters.","Exceptional performance requires deliberate preparation.","Knowledge becomes powerful when applied effectively."]
+],
+Expert:[
+["Pneumonoultramicroscopicsilicovolcanoconiosis is an extraordinarily lengthy word.","Complexity, precision, and unpredictability challenge experienced typists.","Extraordinary circumstances require sophisticated problem-solving capabilities."],
+["Antidisestablishmentarianism demonstrates unusual linguistic complexity.","Meticulous preparation significantly improves consequential performance.","Uncharacteristically difficult circumstances require exceptional adaptability."],
+["The juxtaposition of contradictory perspectives creates philosophical uncertainty.","Electroencephalographically monitored experiments investigate neurological responses.","Multidisciplinary collaboration facilitates unprecedented technological advancements."],
+["A conscientious individual demonstrates extraordinary responsibility and resilience.","The phenomenon remains incomprehensible without comprehensive investigation.","Entrepreneurial opportunities occasionally emerge from unexpected circumstances."],
+["Supercalifragilisticexpialidocious challenges conventional typing expectations.","Incomprehensibility and misinterpretation complicate effective communication.","Extraordinarily sophisticated methodologies require meticulous implementation."]
+]
+};
 
-    function generateWords() {
-        testWords = [...activeWordList];
-        
-        // Only build out a massive row if repeating mode is actively turned ON
-        if (shouldRepeat) {
-            while (testWords.length < 200) {
-                testWords = testWords.concat(activeWordList);
-            }
-        }
-        renderWords();
+// ========================
+// ELEMENTS AND VARIABLES
+// ========================
+
+const $ = id => document.getElementById(id);
+const difficultyOrder = ["Baby","Easy","Medium","Hard","Expert"];
+
+let customWords = [];
+let words = [];
+let wordIndex = 0;
+let seconds = 60;
+let remaining = 60;
+let running = false;
+let finished = false;
+let timer = null;
+let startTime = 0;
+let correctChars = 0;
+let totalChars = 0;
+let completedWords = 0;
+let xpAwardedThisTest = false;
+
+function loadData(key,fallback) {
+ try {
+  const data = JSON.parse(localStorage.getItem(key));
+  return data || fallback;
+ } catch(e) {
+  return fallback;
+ }
+}
+
+let progress = loadData("typerushProgress",{
+ unlocked:1,xp:0,stars:0,completed:[]
+});
+
+// ========================
+// PROGRESSION
+// ========================
+
+function saveProgress() {
+ localStorage.setItem("typerushProgress",JSON.stringify(progress));
+}
+
+function levelNumber(difficulty,level) {
+ return difficultyOrder.indexOf(difficulty)*5+Number(level);
+}
+
+function updateProgressDisplay() {
+ $("progressLevel").textContent=progress.unlocked+"/25";
+ $("xp").textContent=progress.xp;
+ $("stars").textContent=progress.stars;
+ $("completedCount").textContent=progress.completed.length;
+ $("progressBar").style.width=(progress.completed.length/25*100)+"%";
+
+ $("progressMessage").textContent=
+ progress.unlocked>=25
+ ? "🏆 You've unlocked every TypeRush level!"
+ : "Keep going! Complete your next level to unlock more!";
+}
+
+function updateLevelLocks() {
+ const free=$("gameMode").value==="free";
+ const unlocked=progress.unlocked;
+
+ [...$("difficulty").options].forEach(option=>{
+  const category=difficultyOrder.indexOf(option.value);
+  option.disabled=!free && category*5>=unlocked;
+ });
+
+ const category=difficultyOrder.indexOf($("difficulty").value);
+ const available=Math.max(0,Math.min(5,unlocked-category*5));
+
+ [...$("level").options].forEach((option,i)=>{
+  option.disabled=!free && i>=available;
+  option.textContent="Level "+(i+1)+(free?" 🎮":i<available?" 🔓":" 🔒");
+ });
+
+ if(!free && Number($("level").value)>available) {
+  $("level").value=String(Math.max(1,available));
+ }
+}
+
+function completeCurrentLevel(wpm,accuracy) {
+ if(customWords.length || $("gameMode").value==="free") return;
+
+ if(accuracy<70 || wpm<=0) {
+  $("message").textContent+=" Get at least 70% accuracy and some typing speed to unlock this level!";
+  return;
+ }
+
+ const difficulty=$("difficulty").value;
+ const level=Number($("level").value);
+ const number=levelNumber(difficulty,level);
+ const key=difficulty+"-"+level;
+
+ if(progress.completed.includes(key)) {
+  $("progressMessage").textContent="Already completed! Replay to improve your score.";
+  return;
+ }
+
+ const earnedStars=accuracy>=95?3:accuracy>=85?2:1;
+
+ progress.completed.push(key);
+ progress.xp+=100;
+ progress.stars+=earnedStars;
+
+ if(number>=progress.unlocked && progress.unlocked<25) {
+  progress.unlocked=number+1;
+ }
+
+ saveProgress();
+ updateProgressDisplay();
+ updateLevelLocks();
+
+ $("message").textContent=
+ "🎉 LEVEL COMPLETED! +100 XP and "+earnedStars+
+ " stars! "+(progress.unlocked>=25?
+ "You've mastered all 25 levels!":"Your next level is unlocked!");
+}
+
+// ========================
+// WORD GENERATION
+// ========================
+
+function makeWords() {
+ let source;
+
+ if(customWords.length) {
+  source=customWords;
+ } else {
+  const difficulty=$("difficulty").value;
+  const level=Number($("level").value)-1;
+  source=levels[difficulty][level].join(" ").split(/\s+/);
+ }
+
+ words=[...source];
+
+ if($("repeat").checked) {
+  while(words.length<150) words.push(...source);
+ }
+
+ wordIndex=0;
+ renderPrompt();
+}
+
+function renderPrompt() {
+ $("prompt").innerHTML="";
+ words.slice(wordIndex,wordIndex+25).forEach((word,i)=>{
+  const span=document.createElement("span");
+  span.textContent=word+" ";
+  if(i===0) span.classList.add("current");
+  $("prompt").appendChild(span);
+ });
+}
+
+// ========================
+// RESET AND START
+// ========================
+
+function resetTest() {
+ clearInterval(timer);
+ running=false;
+ finished=false;
+ seconds=Number($("duration").value);
+ remaining=seconds;
+ wordIndex=0;
+ correctChars=0;
+ totalChars=0;
+ completedWords=0;
+ startTime=0;
+ xpAwardedThisTest=false;
+
+ $("typing").value="";
+ $("typing").disabled=false;
+ $("time").textContent=remaining;
+ $("wpm").textContent=0;
+ $("accuracy").textContent="100%";
+ $("correct").textContent=0;
+ $("message").textContent="Ready? Start typing!";
+ makeWords();
+}
+
+function startTest() {
+ resetTest();
+ $("typing").focus();
+}
+
+function beginTimer() {
+ if(running || finished) return;
+ running=true;
+ startTime=Date.now();
+
+ timer=setInterval(()=>{
+  remaining=Math.max(0,seconds-Math.floor((Date.now()-startTime)/1000));
+  $("time").textContent=remaining;
+  updateStats();
+  if(remaining<=0) finishTest();
+ },100);
+}
+
+// ========================
+// TYPING AND STATISTICS
+// ========================
+
+function updateStats() {
+ const typed=$("typing").value;
+ const elapsed=Math.max(1,(Date.now()-startTime)/1000);
+ const wpm=Math.round((typed.length/5)/(elapsed/60));
+ const accuracy=totalChars?Math.round(correctChars/totalChars*100):100;
+
+ $("wpm").textContent=wpm;
+ $("accuracy").textContent=accuracy+"%";
+ $("correct").textContent=completedWords;
+}
+
+function updatePrompt(typed) {
+ const spans=[...$("prompt").children];
+ const attempts=typed.split(" ");
+
+ spans.forEach((span,i)=>{
+  span.classList.remove("correct","wrong","current");
+  const attempt=attempts[i]||"";
+  const expected=words[wordIndex+i]||"";
+
+  if(i<attempts.length-1) {
+   span.classList.add(attempt===expected?"correct":"wrong");
+  } else if(i===attempts.length-1) {
+   span.classList.add("current");
+   if(attempt && !expected.startsWith(attempt)) span.classList.add("wrong");
+  }
+ });
+}
+
+$("typing").addEventListener("input",()=>{
+ if(finished) return;
+
+ beginTimer();
+
+ const typed=$("typing").value;
+ const attempts=typed.split(" ");
+ const target=words.slice(wordIndex,wordIndex+attempts.length);
+
+ correctChars=0;
+ totalChars=0;
+ completedWords=0;
+
+ attempts.forEach((attempt,i)=>{
+  const expected=target[i]||"";
+  const completed=i<attempts.length-1;
+
+  if(completed || typed.endsWith(" ")) {
+   totalChars+=Math.max(attempt.length,expected.length);
+   for(let j=0;j<Math.min(attempt.length,expected.length);j++) {
+    if(attempt[j]===expected[j]) correctChars++;
+   }
+   if(attempt===expected) completedWords++;
+  } else {
+   totalChars+=attempt.length;
+   for(let j=0;j<attempt.length;j++) {
+    if(attempt[j]===expected[j]) correctChars++;
+   }
+  }
+ });
+
+ updatePrompt(typed);
+ updateStats();
+
+ if(typed.endsWith(" ")) {
+  const count=attempts.length-1;
+  if(count>0) {
+   wordIndex+=count;
+   $("typing").value="";
+
+   if(wordIndex>=words.length) {
+    if($("repeat").checked) {
+     makeWords();
+    } else {
+     finishTest();
+     return;
     }
+   } else {
+    renderPrompt();
+   }
+  }
+ }
+});
 
-    function renderWords() {
-        wordsDisplay.innerHTML = testWords.map((word, idx) => {
-            if (idx === currentWordIndex) {
-                return `<span class="current-word">${word}</span>`;
-            }
-            return `<span>${word}</span>`;
-        }).join(' ');
-    }
+// ========================
+// LEADERBOARD
+// ========================
 
-    function toggleRepeat() {
-        if (isTestRunning) return;
-        shouldRepeat = !shouldRepeat;
-        if (shouldRepeat) {
-            repeatToggle.innerText = "Repeat List: ON";
-            repeatToggle.style.backgroundColor = "#238636";
-            repeatToggle.style.color = "#ffffff";
-            repeatToggle.style.borderColor = "#238636";
-        } else {
-            repeatToggle.innerText = "Repeat List: OFF";
-            repeatToggle.style.backgroundColor = "transparent";
-            repeatToggle.style.color = "#d1d0c5";
-            repeatToggle.style.borderColor = "#646669";
-        }
-        resetTest();
-    }
+function getScores() {
+ return loadData("typerushScores",[]);
+}
 
-    function changeDuration(seconds, buttonElement) {
-        if (isTestRunning) return; 
-        timerDuration = seconds;
-        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        buttonElement.classList.add('active');
-        resetTest();
-    }
+function saveScore(wpm,accuracy,label) {
+ const scores=getScores();
 
-    function setCustomWords() {
-        const text = customTextInput.value.trim();
-        if (text.length > 0) {
-            activeWordList = text.split(/\s+/);
-        } else {
-            activeWordList = [...defaultWordList];
-        }
-        resetTest();
-    }
+ scores.push({
+  wpm,accuracy,label,
+  date:new Date().toLocaleDateString()
+ });
 
-    function startTimer() {
-        isTestRunning = true;
-        countdownInterval = setInterval(() => {
-            timeLeft--;
-            timerDisplay.innerText = timeLeft;
+ scores.sort((a,b)=>b.wpm-a.wpm||b.accuracy-a.accuracy);
 
-            calculateLiveStats();
+ localStorage.setItem("typerushScores",JSON.stringify(scores.slice(0,10)));
 
-            if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                endTest("Time's up!");
-            }
-        }, 1000);
-    }
+ const best=scores[0]||{wpm:0,accuracy:0};
+ $("bestWpm").textContent=best.wpm;
+ $("bestAccuracy").textContent=best.accuracy+"%";
+ renderLeaderboard();
+}
 
-    inputBox.addEventListener('input', (e) => {
-        if (!isTestRunning && inputBox.value.length > 0) {
-            startTimer();
-        }
+function renderLeaderboard() {
+ const scores=getScores();
+ $("leaderboard").innerHTML="";
 
-        const currentWord = testWords[currentWordIndex];
-        const typedValue = inputBox.value;
+ if(!scores.length) {
+  $("leaderboard").innerHTML=
+   '<tr><td colspan="5">No scores yet. Play a test!</td></tr>';
+ } else {
+  scores.forEach((score,i)=>{
+   const row=document.createElement("tr");
 
-        if (typedValue.endsWith(' ')) {
-            const trimmedValue = typedValue.trim();
-            totalTypedCharacters += trimmedValue.length + 1;
-            
-            if (trimmedValue === currentWord) {
-                correctCharacters += currentWord.length + 1;
-            }
-
-            currentWordIndex++;
-            inputBox.value = '';
-
-            // Stop the game instantly if Repeat is OFF and we run out of words
-            if (currentWordIndex >= testWords.length) {
-                clearInterval(countdownInterval);
-                endTest("Completed all words!");
-            } else {
-                renderWords();
-                calculateLiveStats();
-            }
-        }
+   [i+1,score.wpm,score.accuracy+"%",score.label,score.date]
+    .forEach(value=>{
+     const cell=document.createElement("td");
+     cell.textContent=value;
+     row.appendChild(cell);
     });
 
-    function calculateLiveStats() {
-        const timeElapsed = (timerDuration - timeLeft) / 60;
-        if (timeElapsed <= 0) return;
+   $("leaderboard").appendChild(row);
+  });
+ }
 
-        const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
-        const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
-        statsDisplay.innerText = `WPM: ${wpm} | Accuracy: ${accuracy}%`;
-    }
+ const best=scores[0]||{wpm:0,accuracy:0};
+ $("bestWpm").textContent=best.wpm;
+ $("bestAccuracy").textContent=best.accuracy+"%";
+}
 
-    function endTest(reason) {
-        inputBox.disabled = true;
-        
-        // Calculate based on actual time spent if completed early
-        const timeSpentSeconds = timerDuration - timeLeft;
-        const timeElapsed = (timeSpentSeconds > 0 ? timeSpentSeconds : 1) / 60;
-        
-        const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
-        const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
-        
-        alert(`${reason}\nSpeed: ${wpm} WPM\nAccuracy: ${accuracy}%`);
-        resetTest();
-    }
+// ========================
+// FINISH TEST
+// ========================
 
-    function resetTest() {
-        clearInterval(countdownInterval);
-        isTestRunning = false;
+function finishTest() {
+ if(finished) return;
+
+ clearInterval(timer);
+ running=false;
+ finished=true;
+ $("typing").disabled=true;
+
+ updateStats();
+
+ const wpm=Number($("wpm").textContent);
+ const accuracy=Number($("accuracy").textContent.replace("%",""));
+
+ let label=customWords.length?"Custom":
+  $("difficulty").value+" "+$("level").value+
+  ($("gameMode").value==="free"?" Free Play":"");
+
+ saveScore(wpm,accuracy,label);
+
+ $("message").textContent=
+ "Test finished! You scored "+wpm+" WPM with "+accuracy+"% accuracy.";
+
+ completeCurrentLevel(wpm,accuracy);
+}
+
+// ========================
+// BUTTONS AND CONTROLS
+// ========================
+
+$("start").addEventListener("click",startTest);
+$("reset").addEventListener("click",resetTest);
+
+$("gameMode").addEventListener("change",()=>{
+ updateLevelLocks();
+ resetTest();
+ $("message").textContent=$("gameMode").value==="free"
+  ?"🎮 Free Play! Choose any level!"
+  :"🏆 Progression Mode! Unlock your next level!";
+});
+
+$("difficulty").addEventListener("change",()=>{
+ customWords=[];
+ updateLevelLocks();
+ resetTest();
+});
+
+$("level").addEventListener("change",()=>{
+ customWords=[];
+ resetTest();
+});
+
+$("duration").addEventListener("change",resetTest);
+$("repeat").addEventListener("change",resetTest);
+
+$("apply").addEventListener("click",()=>{
+ const list=$("custom").value.trim().split(/[\s,]+/).filter(Boolean);
+
+ if(!list.length) {
+  $("customMessage").textContent="Please enter some words first!";
+  return;
+ }
+
+ customWords=list;
+ $("customMessage").textContent=list.length+" custom words applied!";
+ resetTest();
+});
+
+$("clearCustom").addEventListener("click",()=>{
+ customWords=[];
+ $("custom").value="";
+ $("customMessage").textContent="Custom words cleared!";
+ resetTest();
+});
+
+$("clearScores").addEventListener("click",()=>{
+ if(confirm("Clear all leaderboard scores?")) {
+  localStorage.removeItem("typerushScores");
+  renderLeaderboard();
+ }
+});
+
+// ========================
+// INITIALISE GAME
+// ========================
+
+updateProgressDisplay();
+updateLevelLocks();
+renderLeaderboard();
+resetTest();
+
+</script>
+</body>
+</html>
