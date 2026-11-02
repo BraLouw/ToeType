@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Typing Test</title>
+    <style>
+        body {
+            background-color: #323437;
+            color: #d1d0c5;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            text-align: center;
+        }
+        #words-display {
+            font-size: 24px;
+            color: #646669;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            text-align: left;
+        }
+        .current-word {
+            color: #d1d0c5;
+            border-bottom: 2px solid #e2b714;
+        }
+        .correct { color: #d1d0c5; }
+        .incorrect { color: #ca4754; border-bottom: 2px solid #ca4754; }
+        #input-box {
+            background: transparent;
+            border: 2px solid #646669;
+            color: #d1d0c5;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 5px;
+            outline: none;
+            width: 100%;
+            max-width: 400px;
+        }
+        #input-box:focus {
+            border-color: #e2b714;
+        }
+        #stats {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #e2b714;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="words-display"></div>
+    <input type="text" id="input-box" placeholder="Type the words here..." autofocus autocomplete="off">
+    <div id="stats">WPM: 0 | Accuracy: 100%</div>
+</div>
+
+<script>
+    const wordList = ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog", "javascript", "code", "github", "game", "typing", "speed", "test", "minimal", "monkey", "style", "lines"];
+    let testWords = [];
+    let currentWordIndex = 0;
+    let startTime = null;
+    let totalTypedCharacters = 0;
+    let correctCharacters = 0;
+
+    const wordsDisplay = document.getElementById('words-display');
+    const inputBox = document.getElementById('input-box');
+    const statsDisplay = document.getElementById('stats');
+
+    function generateWords() {
+        testWords = [];
+        for (let i = 0; i < 15; i++) {
+            const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
+            testWords.push(randomWord);
+        }
+        renderWords();
+    }
+
+    function renderWords() {
+        wordsDisplay.innerHTML = testWords.map((word, idx) => {
+            if (idx === currentWordIndex) {
+                return `<span class="current-word">${word}</span>`;
+            }
+            return `<span>${word}</span>`;
+        }).join(' ');
+    }
+
+    inputBox.addEventListener('input', (e) => {
+        if (!startTime) {
+            startTime = new Date();
+        }
+
+        const currentWord = testWords[currentWordIndex];
+        const typedValue = inputBox.value;
+
+        // Check if user pressed space at the end of a correctly/incorrectly typed word
+        if (typedValue.endsWith(' ')) {
+            const trimmedValue = typedValue.trim();
+            totalTypedCharacters += trimmedValue.length + 1;
+            
+            if (trimmedValue === currentWord) {
+                correctCharacters += currentWord.length + 1;
+            }
+
+            currentWordIndex++;
+            inputBox.value = '';
+
+            if (currentWordIndex >= testWords.length) {
+                calculateFinalStats();
+                resetTest();
+            } else {
+                renderWords();
+                calculateLiveStats();
+            }
+        }
+    });
+
+    function calculateLiveStats() {
+        if (!startTime) return;
+        const timeElapsed = (new Date() - startTime) / 1000 / 60; // in minutes
+        const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
+        const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
+        statsDisplay.innerText = `WPM: ${wpm} | Accuracy: ${accuracy}%`;
+    }
+
+    function calculateFinalStats() {
+        const timeElapsed = (new Date() - startTime) / 1000 / 60;
+        const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
+        alert(`Test complete! Final Speed: ${wpm} WPM`);
+    }
+
+    function resetTest() {
+        currentWordIndex = 0;
+        startTime = null;
+        totalTypedCharacters = 0;
+        correctCharacters = 0;
+        inputBox.value = '';
+        generateWords();
+        statsDisplay.innerText = `WPM: 0 | Accuracy: 100%`;
+    }
+
+    // Start game
+    generateWords();
+</script>
+
+</body>
+</html>
