@@ -21,25 +21,42 @@
             text-align: center;
             width: 90%;
         }
-        .time-modes {
+        .menu-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
             margin-bottom: 20px;
         }
-        .mode-btn {
+        .time-modes {
+            display: flex;
+        }
+        .mode-btn, .toggle-btn {
             background: transparent;
             border: none;
             color: #646669;
             font-family: inherit;
             font-size: 16px;
             cursor: pointer;
-            margin: 0 10px;
             padding: 5px 10px;
-            transition: color 0.2s;
+            transition: color 0.2s, background-color 0.2s;
+            border-radius: 5px;
         }
-        .mode-btn:hover {
+        .mode-btn:hover, .toggle-btn:hover {
             color: #d1d0c5;
         }
         .mode-btn.active {
             color: #e2b714;
+            font-weight: bold;
+        }
+        .toggle-btn {
+            border: 1px solid #646669;
+            color: #d1d0c5;
+        }
+        .toggle-btn.active {
+            background-color: #ca4754;
+            color: #ffffff;
+            border-color: #ca4754;
             font-weight: bold;
         }
         #timer-display {
@@ -116,10 +133,13 @@
 <body>
 
 <div class="container">
-    <div class="time-modes">
-        <button class="mode-btn active" onclick="changeDuration(30, this)">30s</button>
-        <button class="mode-btn" onclick="changeDuration(60, this)">60s</button>
-        <button class="mode-btn" onclick="changeDuration(90, this)">90s</button>
+    <div class="menu-bar">
+        <div class="time-modes">
+            <button class="mode-btn active" onclick="changeDuration(30, this)">30s</button>
+            <button class="mode-btn" onclick="changeDuration(60, this)">60s</button>
+            <button class="mode-btn" onclick="changeDuration(90, this)">90s</button>
+        </div>
+        <button id="repeat-toggle" class="toggle-btn" onclick="toggleRepeat()">Repeat List: OFF</button>
     </div>
 
     <div id="timer-display">30</div>
@@ -145,6 +165,7 @@
     let timeLeft = timerDuration;
     let countdownInterval = null;
     let isTestRunning = false;
+    let shouldRepeat = false;
     
     let totalTypedCharacters = 0;
     let correctCharacters = 0;
@@ -154,16 +175,17 @@
     const inputBox = document.getElementById('input-box');
     const statsDisplay = document.getElementById('stats');
     const customTextInput = document.getElementById('custom-text-input');
+    const repeatToggle = document.getElementById('repeat-toggle');
 
     function generateWords() {
-        // Use the exact word list in order with no random choices
         testWords = [...activeWordList];
         
-        // If the list is short, repeat the list in exact sequential order to fill the test space
-        while (testWords.length < 150) {
-            testWords = testWords.concat(activeWordList);
+        // Only build out a massive row if repeating mode is actively turned ON
+        if (shouldRepeat) {
+            while (testWords.length < 200) {
+                testWords = testWords.concat(activeWordList);
+            }
         }
-        
         renderWords();
     }
 
@@ -176,14 +198,28 @@
         }).join(' ');
     }
 
+    function toggleRepeat() {
+        if (isTestRunning) return;
+        shouldRepeat = !shouldRepeat;
+        if (shouldRepeat) {
+            repeatToggle.innerText = "Repeat List: ON";
+            repeatToggle.style.backgroundColor = "#238636";
+            repeatToggle.style.color = "#ffffff";
+            repeatToggle.style.borderColor = "#238636";
+        } else {
+            repeatToggle.innerText = "Repeat List: OFF";
+            repeatToggle.style.backgroundColor = "transparent";
+            repeatToggle.style.color = "#d1d0c5";
+            repeatToggle.style.borderColor = "#646669";
+        }
+        resetTest();
+    }
+
     function changeDuration(seconds, buttonElement) {
         if (isTestRunning) return; 
-        
         timerDuration = seconds;
-        
         document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
         buttonElement.classList.add('active');
-        
         resetTest();
     }
 
@@ -207,7 +243,7 @@
 
             if (timeLeft <= 0) {
                 clearInterval(countdownInterval);
-                endTest();
+                endTest("Time's up!");
             }
         }, 1000);
     }
@@ -230,8 +266,15 @@
 
             currentWordIndex++;
             inputBox.value = '';
-            renderWords();
-            calculateLiveStats();
+
+            // Stop the game instantly if Repeat is OFF and we run out of words
+            if (currentWordIndex >= testWords.length) {
+                clearInterval(countdownInterval);
+                endTest("Completed all words!");
+            } else {
+                renderWords();
+                calculateLiveStats();
+            }
         }
     });
 
@@ -244,35 +287,20 @@
         statsDisplay.innerText = `WPM: ${wpm} | Accuracy: ${accuracy}%`;
     }
 
-    function endTest() {
+    function endTest(reason) {
         inputBox.disabled = true;
-        const timeElapsed = timerDuration / 60;
+        
+        // Calculate based on actual time spent if completed early
+        const timeSpentSeconds = timerDuration - timeLeft;
+        const timeElapsed = (timeSpentSeconds > 0 ? timeSpentSeconds : 1) / 60;
+        
         const wpm = Math.round((totalTypedCharacters / 5) / timeElapsed) || 0;
         const accuracy = totalTypedCharacters > 0 ? Math.round((correctCharacters / totalTypedCharacters) * 100) : 100;
         
-        alert(`Time's up!\nSpeed: ${wpm} WPM\nAccuracy: ${accuracy}%`);
+        alert(`${reason}\nSpeed: ${wpm} WPM\nAccuracy: ${accuracy}%`);
         resetTest();
     }
 
     function resetTest() {
         clearInterval(countdownInterval);
         isTestRunning = false;
-        timeLeft = timerDuration;
-        currentWordIndex = 0;
-        totalTypedCharacters = 0;
-        correctCharacters = 0;
-        
-        timerDisplay.innerText = timeLeft;
-        inputBox.value = '';
-        inputBox.disabled = false;
-        generateWords();
-        statsDisplay.innerText = `WPM: 0 | Accuracy: 100%`;
-        inputBox.focus();
-    }
-
-    // Initialize game
-    generateWords();
-</script>
-
-</body>
-</html>
