@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TypeRush</title>
+<title>ToeType</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101116;color:#eee;font-family:Arial,sans-serif}
@@ -40,12 +40,40 @@ th{color:#e9b949}
  .stats{grid-template-columns:repeat(2,1fr)}
  #prompt{font-size:18px}
 }
+
+/* Monkeytype-inspired focused typing layout */
+:root{--accent:#e2b714;--page:#323437;--muted:#929496}
+body{background:var(--page);color:#d1d0c5;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+header{padding:28px 15px 10px}h1{color:var(--accent);font-size:32px}
+header p,.muted{color:var(--muted)}main{max-width:1100px;padding:14px 22px}
+.panel{background:transparent;border:0;border-radius:0;padding:18px 8px;margin-bottom:14px;border-bottom:1px solid #454749}
+h2{color:var(--accent);font-size:16px}
+button,select,textarea{background:#2c2e31;color:#d1d0c5;border:1px solid #55585b;border-radius:5px}
+button:hover{border-color:var(--accent);color:var(--accent)}
+.stat{background:transparent;border:1px solid #454749;border-radius:6px;padding:10px}
+.stat strong{color:var(--accent);font-size:24px}.stat span{color:var(--muted)}
+#prompt{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:25px;line-height:1.85;letter-spacing:0;color:#646669;min-height:150px;padding:18px 4px;margin:12px 0;user-select:none}
+#prompt span.correct{color:#d1d0c5;background:transparent}
+#prompt span.wrong{color:#ca4754;background:transparent;text-decoration:underline}
+#prompt span.current{border-bottom:2px solid var(--accent);color:#e2b714}
+#typing{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;min-height:54px;height:54px;resize:none;background:#252729;border:1px solid #55585b;border-radius:6px;font-size:18px;padding:12px}
+#typing:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.progressTrack{background:#454749;height:8px}#progressBar{background:var(--accent)}
+#message,#progressMessage{color:var(--accent)}
+@media(max-width:600px){#prompt{font-size:19px;min-height:125px}main{padding:8px 12px}}
+
+
+#countdown{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;background:rgba(16,17,22,.82);color:var(--accent);font-size:clamp(90px,22vw,190px);font-weight:800;letter-spacing:-8px;text-shadow:0 8px 35px rgba(226,183,20,.2)}
+#countdown.show{display:flex;animation:countPop .35s ease-out}
+@keyframes countPop{from{opacity:0;transform:scale(1.35)}to{opacity:1;transform:scale(1)}}
+#typing:disabled{opacity:.55;cursor:wait}
+
 </style>
 </head>
 <body>
 
 <header>
-<h1>⚡ TypeRush</h1>
+<h1>⚡ ToeType</h1>
 <p>Race your fingers. Beat your best. Become a typing legend.</p>
 </header>
 
@@ -103,10 +131,12 @@ th{color:#e9b949}
 <div class="stat"><strong id="correct">0</strong><span>WORDS</span></div>
 </div>
 <p id="prompt"></p>
-<textarea id="typing" placeholder="Click here and start typing..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+<div id="countdown" aria-live="assertive">3</div>
+<textarea id="typing" placeholder="Click Start, then type when the countdown ends..." autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
 <div class="controls">
 <button id="start">Start / Restart</button>
 <button id="reset">Reset</button>
+<button id="soundToggle" aria-pressed="true">🔊 Sound: ON</button>
 </div>
 <p id="message">Choose a level and start typing!</p>
 </section>
@@ -202,6 +232,9 @@ let remaining = 60;
 let running = false;
 let finished = false;
 let timer = null;
+let countdownTimer = null;
+let soundEnabled = true;
+let audioContext = null;
 let startTime = 0;
 let correctChars = 0;
 let totalChars = 0;
@@ -217,7 +250,7 @@ function loadData(key,fallback) {
  }
 }
 
-let progress = loadData("typerushProgress",{
+let progress = loadData("toetyperProgress",{
  unlocked:1,xp:0,stars:0,completed:[]
 });
 
@@ -226,7 +259,7 @@ let progress = loadData("typerushProgress",{
 // ========================
 
 function saveProgress() {
- localStorage.setItem("typerushProgress",JSON.stringify(progress));
+ localStorage.setItem("toetyperProgress",JSON.stringify(progress));
 }
 
 function levelNumber(difficulty,level) {
@@ -242,7 +275,7 @@ function updateProgressDisplay() {
 
  $("progressMessage").textContent=
  progress.unlocked>=25
- ? "🏆 You've unlocked every TypeRush level!"
+ ? "🏆 You've unlocked every ToeType level!"
  : "Keep going! Complete your next level to unlock more!";
 }
 
@@ -304,6 +337,17 @@ function completeCurrentLevel(wpm,accuracy) {
  "🎉 LEVEL COMPLETED! +100 XP and "+earnedStars+
  " stars! "+(progress.unlocked>=25?
  "You've mastered all 25 levels!":"Your next level is unlocked!");
+
+  if($("gameMode").value==="progression" && progress.unlocked<=25){
+   const nextNumber=progress.unlocked;
+   const nextDifficulty=Math.floor((nextNumber-1)/5);
+   const nextLevel=((nextNumber-1)%5)+1;
+   $("difficulty").value=difficultyOrder[nextDifficulty];
+   $("level").value=String(nextLevel);
+   updateLevelLocks();
+   $("progressMessage").textContent="Next up: "+difficultyOrder[nextDifficulty]+" — Level "+nextLevel+"! Press Start when you're ready.";
+  }
+
 }
 
 // ========================
@@ -370,7 +414,32 @@ function resetTest() {
 
 function startTest() {
  resetTest();
- $("typing").focus();
+ $("typing").disabled=true;
+ const overlay=$("countdown");
+ let count=3;
+ overlay.textContent=count;
+ overlay.classList.add("show");
+ $("message").textContent="Get ready...";
+ countdownTimer=setInterval(()=>{
+  count--;
+  if(count>0){
+   overlay.textContent=count;
+   overlay.classList.remove("show");
+   void overlay.offsetWidth;
+   overlay.classList.add("show");
+  }else if(count===0){
+   overlay.textContent="GO!";
+   overlay.classList.remove("show");
+   void overlay.offsetWidth;
+   overlay.classList.add("show");
+  }else{
+   clearInterval(countdownTimer);
+   overlay.classList.remove("show");
+   $("typing").disabled=false;
+   $("typing").focus();
+   $("message").textContent="Go! The timer starts with your first keystroke.";
+  }
+ },750);
 }
 
 function beginTimer() {
@@ -418,6 +487,54 @@ function updatePrompt(typed) {
   }
  });
 }
+
+
+// Block paste, cut-and-paste shortcuts, and dropped text in the typing test.
+const typingBox=$("typing");
+typingBox.addEventListener("paste",event=>{
+ event.preventDefault();
+ $("message").textContent="Pasting is disabled — type the words yourself!";
+});
+typingBox.addEventListener("drop",event=>{
+ event.preventDefault();
+ $("message").textContent="Dropping text is disabled — type the words yourself!";
+});
+typingBox.addEventListener("dragover",event=>event.preventDefault());
+typingBox.addEventListener("keydown",event=>{
+ if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="v"){
+  event.preventDefault();
+  $("message").textContent="Pasting is disabled — type the words yourself!";
+ }
+});
+
+
+// Tiny keyboard-like tones using Web Audio; no external audio files needed.
+function playKeySound(key){
+ if(!soundEnabled || key==="Backspace" || key==="Shift" || key==="Control" || key==="Alt" || key==="Meta" || key==="Tab" || key==="CapsLock" || key==="Enter") return;
+ try{
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx) return;
+  if(!audioContext) audioContext=new AudioCtx();
+  if(audioContext.state==="suspended") audioContext.resume();
+  const osc=audioContext.createOscillator();
+  const gain=audioContext.createGain();
+  osc.type="square";
+  osc.frequency.value=key===" " ? 520 : 680+(key.length?key.charCodeAt(0)%7*24:0);
+  gain.gain.setValueAtTime(0.0001,audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.035,audioContext.currentTime+0.004);
+  gain.gain.exponentialRampToValueAtTime(0.0001,audioContext.currentTime+0.045);
+  osc.connect(gain);gain.connect(audioContext.destination);
+  osc.start();osc.stop(audioContext.currentTime+0.05);
+ }catch(e){}
+}
+$("typing").addEventListener("keydown",event=>{
+ if(!event.ctrlKey&&!event.metaKey&&!event.altKey) playKeySound(event.key);
+});
+$("soundToggle").addEventListener("click",()=>{
+ soundEnabled=!soundEnabled;
+ $("soundToggle").textContent=soundEnabled?"🔊 Sound: ON":"🔇 Sound: OFF";
+ $("soundToggle").setAttribute("aria-pressed",String(soundEnabled));
+});
 
 $("typing").addEventListener("input",()=>{
  if(finished) return;
@@ -478,7 +595,7 @@ $("typing").addEventListener("input",()=>{
 // ========================
 
 function getScores() {
- return loadData("typerushScores",[]);
+ return loadData("ToeTyperScores",[]);
 }
 
 function saveScore(wpm,accuracy,label) {
@@ -491,7 +608,7 @@ function saveScore(wpm,accuracy,label) {
 
  scores.sort((a,b)=>b.wpm-a.wpm||b.accuracy-a.accuracy);
 
- localStorage.setItem("typerushScores",JSON.stringify(scores.slice(0,10)));
+ localStorage.setItem("ToeTyperScores",JSON.stringify(scores.slice(0,10)));
 
  const best=scores[0]||{wpm:0,accuracy:0};
  $("bestWpm").textContent=best.wpm;
@@ -606,7 +723,7 @@ $("clearCustom").addEventListener("click",()=>{
 
 $("clearScores").addEventListener("click",()=>{
  if(confirm("Clear all leaderboard scores?")) {
-  localStorage.removeItem("typerushScores");
+  localStorage.removeItem("ToeTyperScores");
   renderLeaderboard();
  }
 });
